@@ -1,8 +1,15 @@
 #include<stdio.h>
 #include<string.h>//memset() and strcmp()
 #include<stdlib.h>
-#define INFO printf //方便变更info为空函数
 
+//层次划分
+//   通讯录业务           文件业务        业务层
+//   通讯录数据操作接口   文件操作接口    接口层
+//   通讯录数据结构操作   文件操作        支持层
+
+
+#define INFO printf //方便变更info为空函数
+#define DEBUG printf //调试
 #define NAME_LENGTH  16
 #define PHONE_LENGTH 32
 
@@ -11,7 +18,7 @@
 #define LIST_INSERT(item, list) do {\
     item->next = list;               \
     item->prev = NULL;               \
-    (list)->prev = item; /* need() else *people->prev*/ \
+    if((list) != NULL) (list)->prev = item; /* need() else *people->prev*/ \
     (list) = item;  /*返回头节点,为了头节点可双向修改改为二级指针ppeople*/ \
 } while(0)
 //define do{} while(0)多行代码替换,防止不是同一个代码块的问题
@@ -77,12 +84,14 @@ struct person* people_search(struct person *people, char *name){
             break;
         }
     }
+    DEBUG("debug return item:%p,item->name:%p,item->phone:%p\n",item,&item->name,&item->phone);
     return item;
 }
 
 
 void people_traversal(struct person *people){
     struct person *item = NULL;
+    INFO("----------------------print-start---------------------\n");
     for(item = people;item != NULL; item = item->next){
         INFO("name:%s, phone:%s\n", item->name, item->phone);
     }
@@ -97,6 +106,8 @@ int insert_entry(struct contacts *cts){
     if(p == NULL){
         return -2;
     }
+    //memset(p, 0, sizeof(struct person));//must init else ilegal point
+    
     INFO("Input name:\n");
     scanf("%s", p->name);
 
@@ -139,7 +150,10 @@ int delete_entry(struct contacts *cts){
 
 
 int search_entry(struct contacts *cts){
-     if(cts == NULL) return -1;
+    if(cts == NULL){
+        INFO("contacts don't exist'");
+        return -1; 
+    }
     //search by name
     char name[NAME_LENGTH];
     INFO("Please Input Name:\n");
@@ -151,11 +165,26 @@ int search_entry(struct contacts *cts){
         return -2;
     }
     INFO("name:%s, phone:%s\n", ps->name, ps->phone);
-    free(ps);
+    //free(ps);free是释放ps指向的内存.此处ps指针不是malloc new申请的堆内存，是栈内存，函数结束会自动释放
     return 0;
     
 }
 
+//保存加载文件接口层\支持层
+void save_file(struct person* people, const char* filename){
+    //name:xxx, phone:xxx
+    FILE *fp = fopen(filename, "w");
+    if(fp == NULL) return -1;
+    struct person * item = NULL;
+    for(item = people;item != NULL;item = item->next){
+        
+    }
+} 
+
+void load_file(){
+}
+
+//保存加载文件业务层
 void save_entry(struct contacts *cts){}
 void load_entry(struct contacts *cts){}
 
@@ -170,7 +199,8 @@ int main(){
     
     while(1){
         int select = 0;
-        INFO("Input Select(1-add,2-print,3-delete,4-search,5-save,6-load):\n");
+        
+        INFO("\nInput Select(1-add,2-print,3-delete,4-search,5-save,6-load):\n");
         scanf("%d", &select);
 
         switch(select){
@@ -184,13 +214,19 @@ int main(){
                 delete_entry(cts);
                 break;
             case OPER_SEARCH:
+                search_entry(cts);
                 break;
             case OPER_SAVE:
+                save_entry(cts);
                 break;
             case OPER_LOAD:
+                load_entry(cts);
+                break;
+            default:
                 break;
         }
     }
+    free(cts);
     return 0;
 }
     
