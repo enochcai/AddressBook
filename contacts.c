@@ -12,7 +12,7 @@
 #define DEBUG printf //调试
 #define NAME_LENGTH  16
 #define PHONE_LENGTH 32
-
+#define BUFFER_LENGTH 128
 //支持层:链表操作,list为链表头结点,item为待插入节点，插入到头节点处
 //不做输入空判断,接口层处理
 #define LIST_INSERT(item, list) do {\
@@ -171,17 +171,33 @@ int search_entry(struct contacts *cts){
 }
 
 //保存加载文件接口层\支持层
-void save_file(struct person* people, const char* filename){
+int save_file(struct person* people, const char* filename){
     //name:xxx, phone:xxx
     FILE *fp = fopen(filename, "w");
     if(fp == NULL) return -1;
     struct person * item = NULL;
     for(item = people;item != NULL;item = item->next){
-        
+		fprintf(fp, "name: %s, phone: %s\n", item->name, item->phone);//按格式写入文件缓存
+		fflush(fp);//真正写入文件
     }
-} 
+	fclose(fp);
+	return 0;
+}
 
-void load_file(){
+//解析文件每行格式
+int parser_token(char *buffer, char *name, char *phone){
+	if (buffer == NULL) return -1;
+}
+
+//**people才能修改
+int load_file(struct person **people, const char *filename){
+	FILE *fp = fopen(filename, "r");
+	if (fp == NULL) return -1;
+	
+	while(!feof(fp)){//feof()文件末尾返回0
+		char buffer[BUFFER_LENGTH] = {0};
+		fgets(buffer, BUFFER_LENGTH, fp);//读取内容到buffer字符数组里
+	}
 }
 
 //保存加载文件业务层
