@@ -177,7 +177,7 @@ int save_file(struct person* people, const char* filename){
     if(fp == NULL) return -1;
     struct person * item = NULL;
     for(item = people;item != NULL;item = item->next){
-		fprintf(fp, "name: %s, phone: %s\n", item->name, item->phone);//按格式写入文件缓存
+		fprintf(fp, "name: %s,telephone: %s\n", item->name, item->phone);//按格式写入文件缓存
 		fflush(fp);//真正写入文件
     }
 	fclose(fp);
@@ -185,24 +185,75 @@ int save_file(struct person* people, const char* filename){
 }
 
 //解析文件每行格式
-int parser_token(char *buffer, char *name, char *phone){
+int parser_token(char *buffer, int length, char *name, char *phone){
 	if (buffer == NULL) return -1;
+	int i = 0, j = 0, status = 0;
+	for(i = 0;buffer[i] != ','; i++){//用状态机标记开始存入name的位置直到遇到','
+		if(buffer[i] == ' '){
+			status = 1;
+		}else if (status == 1){
+			name[j++] = buffer[i];
+		}
+	}
+	
+	status = 0;
+	j = 0;
+	for(;i < length; i++){
+		if(buffer[i] == ' '){
+			status = 1;
+		}else if(status == 1){
+			phone[j++] = buffer[i];
+		}
+	}
+	INOF("file token: %s --> %s\n", name, phone);
+	return 0;
 }
 
 //**people才能修改
-int load_file(struct person **people, const char *filename){
+int load_file(struct person **ppeople, int *count, const char *filename){
 	FILE *fp = fopen(filename, "r");
 	if (fp == NULL) return -1;
 	
 	while(!feof(fp)){//feof()文件末尾返回0
 		char buffer[BUFFER_LENGTH] = {0};
-		fgets(buffer, BUFFER_LENGTH, fp);//读取内容到buffer字符数组里
+		fgets(buffer, BUFFER_LENGTH, fp);//读取内容到buffer字符里
+
+		//name: xxx,telephone: 1223
+		char name[NAME_LENGTH] = {0};
+		char phone[PHONE_LENGTH] = {0};
+		if(parser_token(buffer, strlen(buffer), name, phone) != 0){
+			continue;
+		}
+		struct person *p = (struct person*)malloc(sizeof(struct person));
+		if(p == NULL) return -2;
+
+		memcp(p->name, name, NAME_LENGTH);
+		memcp(p->phone, phone, PHONE_LENGTH);
+
+		people_insert(ppeople, p);
+		(*count) ++;
 	}
+	fclose(fp);
+	return 0;
 }
 
 //保存加载文件业务层
-void save_entry(struct contacts *cts){}
-void load_entry(struct contacts *cts){}
+void save_entry(struct contacts *cts){
+	if (cts == NULL) return -1;
+	INFO("Please Input Save Filename: \n");
+	char filename[NAME_LENGTH] = {0};
+	scanf("%s", filename);
+
+	save_file(cts->people, filename);
+}
+void load_entry(struct contacts *cts){	
+	if (cts == NULL) return -1;
+	INFO("Please Input Load Filename: \n");
+	char filename[NAME_LENGTH] = {0};
+	scanf("%s", filename):
+
+	load_file(cts->people, filename);
+}
 
 
 
@@ -242,7 +293,9 @@ int main(){
                 break;
         }
     }
+exit:
     free(cts);
+
     return 0;
 }
     
