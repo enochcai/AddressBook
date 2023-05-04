@@ -13,6 +13,7 @@
 #define NAME_LENGTH  16
 #define PHONE_LENGTH 32
 #define BUFFER_LENGTH 128
+#define MINI_TOKEN_LENGTH 5
 //支持层:链表操作,list为链表头结点,item为待插入节点，插入到头节点处
 //不做输入空判断,接口层处理
 #define LIST_INSERT(item, list) do {\
@@ -187,8 +188,10 @@ int save_file(struct person* people, const char* filename){
 //解析文件每行格式
 int parser_token(char *buffer, int length, char *name, char *phone){
 	if (buffer == NULL) return -1;
-	int i = 0, j = 0, status = 0;
-	for(i = 0;buffer[i] != ','; i++){//用状态机标记开始存入name的位置直到遇到','
+	if(length < MINI_TOKEN_LENGTH) return -2;
+
+    int i = 0, j = 0, status = 0;
+	for(i = 0;buffer[i] != ','; i++){//用状态机标记开始存入name的位置直到遇到,
 		if(buffer[i] == ' '){
 			status = 1;
 		}else if (status == 1){
@@ -205,7 +208,7 @@ int parser_token(char *buffer, int length, char *name, char *phone){
 			phone[j++] = buffer[i];
 		}
 	}
-	INOF("file token: %s --> %s\n", name, phone);
+	INFO("file token: %s --> %s", name, phone);
 	return 0;
 }
 
@@ -217,7 +220,8 @@ int load_file(struct person **ppeople, int *count, const char *filename){
 	while(!feof(fp)){//feof()文件末尾返回0
 		char buffer[BUFFER_LENGTH] = {0};
 		fgets(buffer, BUFFER_LENGTH, fp);//读取内容到buffer字符里
-
+        int length = strlen(buffer);
+        //INFO("length: %d\n", length);
 		//name: xxx,telephone: 1223
 		char name[NAME_LENGTH] = {0};
 		char phone[PHONE_LENGTH] = {0};
@@ -227,8 +231,8 @@ int load_file(struct person **ppeople, int *count, const char *filename){
 		struct person *p = (struct person*)malloc(sizeof(struct person));
 		if(p == NULL) return -2;
 
-		memcp(p->name, name, NAME_LENGTH);
-		memcp(p->phone, phone, PHONE_LENGTH);
+		memcpy(p->name, name, NAME_LENGTH);
+		memcpy(p->phone, phone, PHONE_LENGTH);
 
 		people_insert(ppeople, p);
 		(*count) ++;
@@ -238,7 +242,7 @@ int load_file(struct person **ppeople, int *count, const char *filename){
 }
 
 //保存加载文件业务层
-void save_entry(struct contacts *cts){
+int save_entry(struct contacts *cts){
 	if (cts == NULL) return -1;
 	INFO("Please Input Save Filename: \n");
 	char filename[NAME_LENGTH] = {0};
@@ -246,17 +250,27 @@ void save_entry(struct contacts *cts){
 
 	save_file(cts->people, filename);
 }
-void load_entry(struct contacts *cts){	
+
+int load_entry(struct contacts *cts){	
 	if (cts == NULL) return -1;
 	INFO("Please Input Load Filename: \n");
 	char filename[NAME_LENGTH] = {0};
-	scanf("%s", filename):
+	scanf("%s", filename);
 
-	load_file(cts->people, filename);
+    load_file(&cts->people, &cts->count, filename);
 }
 
 
+void menu_info(void) {
 
+    INFO("\n\n********************************************************\n");
+    INFO("***** 1. Add Person\t\t2. Print People ********\n");
+    INFO("***** 3. Del Person\t\t4. Search Person *******\n");
+    INFO("***** 5. Save People\t\t6. Load People *********\n");
+    INFO("***** Other Key for Exiting Program ********************\n");
+    INFO("********************************************************\n\n");
+
+}
 
 int main(){
     struct contacts *cts = (struct contacts *)malloc(sizeof(struct contacts));
@@ -267,9 +281,9 @@ int main(){
     while(1){
         int select = 0;
         
-        INFO("\nInput Select(1-add,2-print,3-delete,4-search,5-save,6-load):\n");
+        menu_info();
         scanf("%d", &select);
-
+        
         switch(select){
             case OPER_INSERT:
                 insert_entry(cts);
@@ -290,7 +304,7 @@ int main(){
                 load_entry(cts);
                 break;
             default:
-                break;
+                goto exit;
         }
     }
 exit:
