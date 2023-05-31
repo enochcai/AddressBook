@@ -202,13 +202,16 @@ int parser_token(char *buffer, int length, char *name, char *phone){
 	status = 0;
 	j = 0;
 	for(;i < length; i++){
-		if(buffer[i] == ' '){
+		if(buffer[i] == '\n'){
+			break;
+		}
+		else if(buffer[i] == ' '){
 			status = 1;
 		}else if(status == 1){
 			phone[j++] = buffer[i];
 		}
 	}
-	INFO("file token: %s --> %s", name, phone);
+	INFO("file token: %s --> %s\n", name, phone);
 	return 0;
 }
 
@@ -219,7 +222,7 @@ int load_file(struct person **ppeople, int *count, const char *filename){
 	
 	while(!feof(fp)){//feof()文件末尾返回0
 		char buffer[BUFFER_LENGTH] = {0};
-		fgets(buffer, BUFFER_LENGTH, fp);//读取内容到buffer字符里
+		fgets(buffer, BUFFER_LENGTH, fp);//读取内容到buffer字符里,'\n' include 
         int length = strlen(buffer);
         //INFO("length: %d\n", length);
 		//name: xxx,telephone: 1223
