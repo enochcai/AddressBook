@@ -15,14 +15,15 @@
 #define BUFFER_LENGTH 128
 #define MINI_TOKEN_LENGTH 5
 //支持层:链表操作,list为链表头结点,item为待插入节点，插入到头节点处
-//不做输入空判断,接口层处理
+//不做输入空判断,接口层处理，这里list是替换，不是参数传递,list 替换为 *people
 #define LIST_INSERT(item, list) do {\
     item->next = list;               \
     item->prev = NULL;               \
     if((list) != NULL) (list)->prev = item; /* need() else *people->prev*/ \
-    (list) = item;  /*返回头节点,为了头节点可双向修改改为二级指针ppeople*/ \
+    (list) = item;  /*返回头节,为了头节点可双向修改改为二级指针ppeople*/ \
 } while(0)
 //define do{} while(0)多行代码替换,防止不是同一个代码块的问题
+
 
 //支持层：链表操作,item为要删除的节点 --TODO:参数用item和list的好处？为何不是只要一个item参数就可以
 #define LIST_REMOVE(item, list) do {    \
@@ -38,6 +39,19 @@
     }                                   \
     item->prev = item->next = NULL;     \
 } while(0)
+
+
+//scanf防止溢出接口
+int safeScanf(int width, char *var){
+    if(fgets(var, width, stdin) == NULL){
+		return -1;
+	}
+
+	if(var[strlen(var) - 1] == '\n'){
+		var[strlen(var) -1] = '\0';
+	}
+	return 0;
+}
 
 //底层数据结构,TODO:此处链表和业务数据name phone没有分离？可以分离不？讲数据结构的操作和业务进行分离
 struct person{
@@ -68,6 +82,26 @@ int people_insert(struct person **ppeople, struct person *ps){
     if(ps == NULL) return -1;
     LIST_INSERT(ps, *ppeople);
     return 0;
+}
+
+int people_insert_sort(struct person **ppeople, struct person *ps){
+    if(*ppeople == NULL){
+		LIST_INSERT(ps, *ppeople);
+		return 0;
+	}
+	struct person * cur = *ppeople;
+	struct person * pre = cur->prev;
+	while(cur != NULL && strcmp(cur->name, ps->name) <= 0){//升序:找到比待插入的<或=就继续，直到找到比它大就停止
+		pre = cur;
+		cur = cur->next;
+	}
+	if(pre != NULL){
+		pre->next = ps;
+		ps->prev = pre;
+	}
+	cur->prev = ps;
+	ps->next = cur;
+	return 0;
 }
 
 int people_delete(struct person **ppeople, struct person *ps){
@@ -116,7 +150,7 @@ int insert_entry(struct contacts *cts){
     INFO("Input phone:\n");
     scanf("%s", p->phone);
     //add people
-    if(people_insert(&cts->people, p) != 0){
+    if(people_insert_sort(&cts->people, p) != 0){
        free(p);
        return -3;
     }
@@ -237,7 +271,7 @@ int load_file(struct person **ppeople, int *count, const char *filename){
 		memcpy(p->name, name, NAME_LENGTH);
 		memcpy(p->phone, phone, PHONE_LENGTH);
 
-		people_insert(ppeople, p);
+		people_insert_sort(ppeople, p);
 		(*count) ++;
 	}
 	fclose(fp);
