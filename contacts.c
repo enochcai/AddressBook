@@ -95,12 +95,13 @@ int people_insert_sort(struct person **ppeople, struct person *ps){
 		pre = cur;
 		cur = cur->next;
 	}
-	if(pre != NULL){
-		pre->next = ps;
-		ps->prev = pre;
+	pre->next = ps;
+	ps->prev = pre;
+	if(cur != NULL){
+		cur->prev = ps;
+		ps->next = cur;
 	}
-	cur->prev = ps;
-	ps->next = cur;
+
 	return 0;
 }
 
