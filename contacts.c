@@ -24,6 +24,28 @@
 } while(0)
 //define do{} while(0)多行代码替换,防止不是同一个代码块的问题
 
+//list为头结点,index为要插入的位置,从0开始,返回头节点
+#define LIST_INSERT_INDEX(item, list, index) do {\
+	if(index == 0){\
+		LIST_INSERT(item, list);\
+	}else{\
+		for(int i=1;i<index;i++){\
+			(list) = (list)->next;\
+		}\
+		if((list) != NULL){\
+			if ((list)->next != NULL){\
+				(list)->next->prev = item;\
+				item->next = (list)->next;\
+			}\
+			(list)->next = item;\
+			item->prev = (list);\
+		}\
+		for(int i=1;i<index;i++){\
+			(list) = (list)->prev;\
+		}\
+	}\
+} while(0)
+
 
 //支持层：链表操作,item为要删除的节点 --TODO:参数用item和list的好处？为何不是只要一个item参数就可以
 #define LIST_REMOVE(item, list) do {    \
@@ -84,6 +106,7 @@ int people_insert(struct person **ppeople, struct person *ps){
     return 0;
 }
 
+
 int people_insert_sort(struct person **ppeople, struct person *ps){
     if(*ppeople == NULL){
 		LIST_INSERT(ps, *ppeople);
@@ -102,6 +125,22 @@ int people_insert_sort(struct person **ppeople, struct person *ps){
 		ps->next = cur;
 	}
 
+	return 0;
+}
+
+int people_insert_sort_index(struct person **ppeople, struct person *ps){
+	if(*ppeople == NULL){
+		LIST_INSERT(ps, *ppeople);
+		return 0;
+	}
+	int index = 0;
+	struct person * cur = *ppeople;
+
+	while(cur != NULL && strcmp(cur->name, ps->name) <= 0){//升序:找到比待插入的<或=就继续，直到找到比它大就停止
+		cur = cur->next;
+		index += 1;
+	}
+    LIST_INSERT_INDEX(ps, *ppeople, index);
 	return 0;
 }
 
@@ -151,7 +190,8 @@ int insert_entry(struct contacts *cts){
     INFO("Input phone:\n");
     scanf("%s", p->phone);
     //add people
-    if(people_insert_sort(&cts->people, p) != 0){
+    //if(people_insert_sort(&cts->people, p) != 0){
+	if(people_insert_sort_index(&cts->people, p) != 0) {
        free(p);
        return -3;
     }
@@ -272,7 +312,9 @@ int load_file(struct person **ppeople, int *count, const char *filename){
 		memcpy(p->name, name, NAME_LENGTH);
 		memcpy(p->phone, phone, PHONE_LENGTH);
 
-		people_insert_sort(ppeople, p);
+		//people_insert_sort(ppeople, p);
+		
+		people_insert_sort_index(ppeople, p);
 		(*count) ++;
 	}
 	fclose(fp);
