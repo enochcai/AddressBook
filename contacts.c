@@ -144,6 +144,7 @@ int people_insert_sort_index(struct person **ppeople, struct person *ps){
 	return 0;
 }
 
+
 int people_delete(struct person **ppeople, struct person *ps){
     if(ps == NULL) return -1;
     LIST_REMOVE(ps, *ppeople);
